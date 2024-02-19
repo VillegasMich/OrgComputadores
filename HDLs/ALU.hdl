@@ -63,5 +63,4 @@ CHIP ALU {
     Or16Way(in=temp, out=checkzr);
     Not(in=checkzr, out=zr);
     
-    
 }

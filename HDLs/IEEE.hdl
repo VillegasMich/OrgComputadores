@@ -1,0 +1,6 @@
+CHIP IEEE{
+    IN s,e[6],f[9];
+    OUT out[16];
+    PARTS:
+    Mux16(a=true, b[15]=s,b[9..14]=e, b[0..8]=f,sel=true, out=out);
+}

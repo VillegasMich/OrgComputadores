@@ -1,0 +1,11 @@
+CHIP Ca2 {
+  IN
+    num[16];
+  
+  OUT
+    out[16];
+
+  PARTS:
+  Not16(in=num, out=negNum);
+  Inc16(in=negNum, out=out);
+}

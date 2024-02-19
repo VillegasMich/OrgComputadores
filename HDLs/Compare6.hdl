@@ -1,0 +1,66 @@
+CHIP Compare6{
+    IN a[6], b[6];
+    OUT lt, eq;
+    PARTS:
+
+
+    Not(in=a[0], out=nota0);
+    Not(in=a[1], out=nota1);
+    Not(in=a[2], out=nota2);
+    Not(in=a[3], out=nota3);
+    Not(in=a[4], out=nota4);
+    Not(in=a[5], out=nota5);
+    
+    Xor(a=a[0], b=b[0], out=X01);
+    Xor(a=a[1], b=b[1], out=X02);
+    Xor(a=a[2], b=b[2], out=X03);
+    Xor(a=a[3], b=b[3], out=X04);
+    Xor(a=a[4], b=b[4], out=X05);
+    Xor(a=a[5], b=b[5], out=X06);
+
+    Not(in=X01, out=notX00);
+    Not(in=X02, out=notX01);
+    Not(in=X03, out=notX02);
+    Not(in=X04, out=notX03);
+    Not(in=X05, out=notX04);
+    Not(in=X06, out=notX05);
+    
+
+    And6(a=notX00, b=notX01, c=notX02, d=notX03, e=notX04, f=notX05, out=eq);
+
+    //A5 < B5
+    And(a=nota5, b=b[5], out=lt1);
+
+    
+    //A5 = B5 * A4 < B4
+    And(a=nota4, b=b[4], out=lt1a);
+    And(a=lt1a, b=notX05, out=lt2);
+
+    //A5 = B5 * A4 = B4 * A3 < B3 
+    And(a=nota3, b=b[3], out=lt3a);
+    And(a=notX05, b=notX04, out=lt3b);
+    And(a=lt3b, b=lt3a, out=lt3);
+ 
+    //A5 = B5 * A4 = B4 * A3 = B3 * A2 < B2
+    And(a=nota2, b=b[2], out=lt4a);
+    And(a=notX05, b=notX04, out=lt4b);
+    And(a=notX03, b=lt4b, out= lt4c);
+    And(a=lt4c, b=lt4a, out=lt4);
+
+    //A5 = B5 * A4 = B4 * A3 = B3 * A2 = B2 * A1 < B1
+    And(a=nota1, b=b[1], out=lt5a);
+    And(a=notX05, b=notX04, out=lt5b);
+    And(a=notX03, b=notX02, out= lt5c);
+    And(a=lt5b, b=lt5c, out=lt5d);
+    And(a=lt5d, b=lt5a, out=lt5);
+
+    //A5 = B5 * A4 = B4 * A3 = B3 * A2 = B2 * A1 = B1 * A0 < B0
+    And(a=nota0, b=b[0], out=lt6a);
+    And(a=notX05, b=notX04, out=lt6b);
+    And(a=notX03, b=notX02, out= lt6c);
+    And(a=lt6b, b=lt6c, out=lt6d);
+    And(a=lt6d, b=notX01, out=lt6e);
+    And(a=lt6e, b=lt6a, out=lt6);
+
+    Or6(a=lt1, b=lt2, c=lt3, d=lt4, e=lt5, f=lt6, out=lt);
+}

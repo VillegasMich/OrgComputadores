@@ -1,0 +1,84 @@
+CHIP ALUs {
+  IN x[16], y[16], sel[2]; // sel 00 = f; sel 01 = sum; sel 10 = res
+  OUT out[16], ng, zr;
+
+  PARTS:
+
+  //! Suma signo y sin signo
+  Add16(a=x, b=y, out=sumOut);
+
+  //! Resta signo y sin signo
+  Ca2(num=y, out=yca2);
+  Add16(a=x, b=yca2, out=resOut);
+
+  //! IEEE
+  Ca2(num[0..4]=true, num[5..15]=false, out=Ca2Const); // -31
+
+  // exponente X
+  Add16(a[0..5]=x[9..14], a[6..15]=false, b=Ca2Const, out[0..5]=expX); 
+
+  // Exponente Y
+  Add16(a[0..5]=y[9..14], a[6..15]=false, b=Ca2Const, out[0..5]=expY);
+
+  // Comparar exponentes
+  Compare6(a=expX, b=expY, lt=altb, eq=aeqb);
+  Compare6(a=expY, b=expX, lt=blta);
+
+  // Encontrar el exponente del resultado final
+  Mux16(a[0..5]=x[9..14], a[6..15]=false, b[0..5]=y[9..14], b[6..15]=false,  sel=altb, out[0..5]=expOut);
+
+  // Negamos los exponentes
+  Ca2(num[0..5]=expX, num[6..15]=false, out=Ca2expX);
+  Ca2(num[0..5]=expY, num[6..15]=false, out=Ca2expY);
+
+  // Restamos para saber cual es el resultado positivo.
+  Add16(a[0..5]=expY, a[6..15]=false, b=Ca2expX, out=YminusX);
+  Add16(a[0..5]=expX, a[6..15]=false, b=Ca2expY, out=XminusY);
+
+  // Resta para saber cuanto mover la coma.
+  Mux16(a=XminusY, b=YminusX, sel=altb, out=numToAdd);
+
+  // Encontrar fraccion del Menor exponente.
+  Mux16(a=y, b=x, sel=altb, out[0..8]=opFractionLow);
+
+  // Encontrar fraccion del Mayor exponente.
+  // El signo del numero mas grande de los dos.
+  Mux16(a=x, b=y, sel=altb, out[0..8]=opFractionHigh, out[0]=outSigResult);
+
+  // Añadir el 1 a la izuierda
+  RightShifter(in=opFractionLow, out=shift1);
+
+  //! Añadir 0 a la izquierda contador hasta que no exista diferencia de exponentes
+  RightShifterZero(in=shift1, out=shift2);
+  // RightShifterZero(in=shift2, out=shift3);
+  // RightShifterZero(in=shift3, out=shift4);
+  // RightShifterZero(in=shift4, out=shift5);
+  // RightShifterZero(in=shift5, out=shift6);
+  // RightShifterZero(in=shift6, out=shift7);
+  // RightShifterZero(in=shift7, out=shift8);
+  // Ca2(a=true, out=menosuno);
+  // Add16(a=numToAdd, b=menosuno, out=flagShift);
+  // Mux8Way16(a=shift1, b=shift2, c=shift3, d=shift4, e=shift5, f=shift6, g=shift7, h=shift8, sel=flagShift, out=);
+
+  // Si son iguales
+  Add16(a[0..8]=opFractionHigh, a[9..15]=false, b[0..8]=opFractionLow, b[9..15]=false, out=outEqFraction);
+  RightShifterZero16(in=outEqFraction, out=finalEqFraction);
+
+  // Sumamos las fracciones.
+  //! Especificar el shift necesario
+  Add16(a[0..8]=shift2, a[9..15]=false ,b[0..8]=opFractionHigh,b[9..15]=false, out=outLtFraccion);
+  Mux16(a=outLtFraccion, b=finalEqFraction, sel=aeqb, out[0..8]=outFraccionResult);
+  
+
+  // Organizamos el numero en la notacion correspondiente
+  IEEE(s=outSigResult, e=expOut, f=outFraccionResult, out=outIEEE);
+
+  // Seleccionar el resultado
+
+  Mux4Way16(a=outIEEE, b=sumOut, c=resOut, d=false, sel=sel, out=out, out=finalOut, out[15]=flagng);
+  Mux(a=false, b=true, sel=flagng, out=ng);
+
+  Or16Way(in=finalOut, out=checkzr);
+  Not(in=checkzr, out=zr);
+
+}
