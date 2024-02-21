@@ -1,0 +1,16 @@
+CHIP Mux8Way9 {
+    IN a[9], b[9], c[9], d[9],
+       e[9], f[9], g[9], h[9],
+       sel[3];
+    OUT out[9];
+
+    PARTS:
+    // Binary tree of 2-way multiplexors
+    Mux9(a=a,    b=b,    sel=sel[0], out=ab);
+    Mux9(a=c,    b=d,    sel=sel[0], out=cd);
+    Mux9(a=e,    b=f,    sel=sel[0], out=ef);
+    Mux9(a=g,    b=h,    sel=sel[0], out=gh);
+    Mux9(a=ab,   b=cd,   sel=sel[1], out=abcd);
+    Mux9(a=ef,   b=gh,   sel=sel[1], out=efgh);
+    Mux9(a=abcd, b=efgh, sel=sel[2], out=out);
+}

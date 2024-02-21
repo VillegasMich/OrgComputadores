@@ -1,5 +1,5 @@
 CHIP ALUs {
-  IN x[16], y[16], sel[2]; // sel 00 = f; sel 01 = sum; sel 10 = res
+  IN x[16], y[16], sel[2]; // sel 00 = f; sel 01 = sum; sel 10 = res; sel 11 = false;
   OUT out[16], ng, zr;
 
   PARTS:
@@ -36,42 +36,56 @@ CHIP ALUs {
   Add16(a[0..5]=expX, a[6..15]=false, b=Ca2expY, out=XminusY);
 
   // Resta para saber cuanto mover la coma.
-  Mux16(a=XminusY, b=YminusX, sel=altb, out=numToAdd);
+  Mux16(a=XminusY, b=YminusX, sel=altb, out[0..8]=numToAdd);
 
   // Encontrar fraccion del Menor exponente.
   Mux16(a=y, b=x, sel=altb, out[0..8]=opFractionLow);
 
   // Encontrar fraccion del Mayor exponente.
   // El signo del numero mas grande de los dos.
-  Mux16(a=x, b=y, sel=altb, out[0..8]=opFractionHigh, out[0]=outSigResult);
+  Mux16(a=x, b=y, sel=altb, out[0..8]=opFractionHigh, out[15]=outSigResult);
 
   // Añadir el 1 a la izuierda
-  RightShifter(in=opFractionLow, out=shift1);
+  RightShifter(in=opFractionLow, out=shiftFractionLow);
+  RightShifter(in=opFractionHigh, out=shiftFractionHigh);
 
   //! Añadir 0 a la izquierda contador hasta que no exista diferencia de exponentes
+  RightShifterZero(in=shiftFractionLow, out=shift1);
   RightShifterZero(in=shift1, out=shift2);
-  // RightShifterZero(in=shift2, out=shift3);
-  // RightShifterZero(in=shift3, out=shift4);
-  // RightShifterZero(in=shift4, out=shift5);
-  // RightShifterZero(in=shift5, out=shift6);
-  // RightShifterZero(in=shift6, out=shift7);
-  // RightShifterZero(in=shift7, out=shift8);
-  // Ca2(a=true, out=menosuno);
-  // Add16(a=numToAdd, b=menosuno, out=flagShift);
-  // Mux8Way16(a=shift1, b=shift2, c=shift3, d=shift4, e=shift5, f=shift6, g=shift7, h=shift8, sel=flagShift, out=);
+  RightShifterZero(in=shift2, out=shift3);
+  RightShifterZero(in=shift3, out=shift4);
+  RightShifterZero(in=shift4, out=shift5);
+  RightShifterZero(in=shift5, out=shift6);
+  RightShifterZero(in=shift6, out=shift7);
+  
+  // Restarle 1 al numToAdd
+  Ca2(num[1..14]=false, num[0]=true, out[0..8]=minusOne);
+  Add9Carry(a=numToAdd, b=minusOne, out=minusNumToAdd);
+  Mux9(a=minusNumToAdd, b=numToAdd, sel=aeqb, out[0..2]=flagDiff);
+  Mux8Way9(a=shiftFractionLow, b=shift1, c=shift2, d=shift3, e=shift4, f=shift5, g=shift6, h=shift7, sel=flagDiff, out=finalFractionLow);
+  
 
   // Si son iguales
-  Add16(a[0..8]=opFractionHigh, a[9..15]=false, b[0..8]=opFractionLow, b[9..15]=false, out=outEqFraction);
-  RightShifterZero16(in=outEqFraction, out=finalEqFraction);
+  Add9Carry(a=shiftFractionHigh, b=shiftFractionLow, out=outEqFraction, carry=carryFlag);
+  
 
   // Sumamos las fracciones.
   //! Especificar el shift necesario
-  Add16(a[0..8]=shift2, a[9..15]=false ,b[0..8]=opFractionHigh,b[9..15]=false, out=outLtFraccion);
-  Mux16(a=outLtFraccion, b=finalEqFraction, sel=aeqb, out[0..8]=outFraccionResult);
+  Add9Carry(a=finalFractionLow, b=opFractionHigh, out=outLtFraccion, carry=carryFlagDiff);
+  Mux9(a=outLtFraccion, b=outEqFraction, sel=aeqb, out=outFraccionResult);
   
+  // Si la suma de fracciones da carry sumamos 1 al exponente
+  Mux(a=carryFlagDiff, b=carryFlag, sel=aeqb, out=finalCarryFlag);
+  Inc16(in[0..5]=expOut, out[0..5]=expOutOne);
+
+  //* un rigth shift al la fraccion si da carry su suma
+  // RightShifterZero(in=outFraccionResult, out=outFraccionResultMoved);
+  // Mux9(a=outFraccionResultMoved ,b=outFraccionResult, sel=finalCarryFlag, out=finalFractionDef);
+
+  Mux9(a[0..5]=expOut, a[6..8]=false, b[0..5]=expOutOne, b[6..8]=false, sel=finalCarryFlag, out[0..5]=outFinalExp);
 
   // Organizamos el numero en la notacion correspondiente
-  IEEE(s=outSigResult, e=expOut, f=outFraccionResult, out=outIEEE);
+  IEEE(s=outSigResult, e=outFinalExp, f=outFraccionResult, out=outIEEE);
 
   // Seleccionar el resultado
 
