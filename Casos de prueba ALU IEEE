@@ -1,4 +1,8 @@
 13.285 (4552) + 7.025 (4383) = 20.31 -> No genera la mantisa correcta
 10.5 + 10.5 = 21 -> Correcto
-10.5 + 3.15 = 13.625 -> Correcto
-
+7.65 (43d3)+ 5.22 (429c) = 12.87 -> Correcto
+20.66 (4695) + 21.07 (46a2) = 41.73 -> Correcto
+20.66 (4695) + 3.22 (4138) = 23.88 -> Correcto
+9.657 (446a) + 30.55 (47d1) = 40.21 -> a la mantisa parece que le falta un desplazamiento a la derecha agregandole un 1 al inicio
+11.396 (44d9) + 2.33 (4054) = 13.73 -> Correcto
+78.34 (4a72) + 1.6 (3f33) = 79.84 -> Correcto
