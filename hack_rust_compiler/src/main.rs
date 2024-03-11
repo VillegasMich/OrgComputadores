@@ -71,8 +71,6 @@ fn symbol_table(vec: Vec<&str>) -> HashMap<String, u16> {
         ("ARG".to_string(), 2),
         ("THIS".to_string(), 3),
         ("THAT".to_string(), 4),
-        ("WRITE".to_string(), 18),
-        ("END".to_string(), 22),
     ]);
     let mut var_pos: u16 = 16;
     let mut line_iter = 0;
@@ -82,15 +80,11 @@ fn symbol_table(vec: Vec<&str>) -> HashMap<String, u16> {
             Some(0) => {
                 let var = inst.replace("@", "");
                 match var_history.contains_key(var.as_str()) {
-                    true => {
-                        continue;
-                    }
+                    true => {}
                     false => {
                         let try_num: Result<u16, _> = var.parse();
                         match try_num {
-                            Ok(_) => {
-                                continue;
-                            }
+                            Ok(_) => {}
                             _ => {
                                 var_history.insert(var, var_pos);
                                 var_pos += 1;
@@ -103,10 +97,9 @@ fn symbol_table(vec: Vec<&str>) -> HashMap<String, u16> {
                 Some(0) => {
                     let tag = inst.replace("(", "").replace(")", "");
                     match var_history.contains_key(tag.as_str()) {
-                        true => {
-                            continue;
-                        }
+                        true => {}
                         false => {
+                            // println!("Tag: {} Line_iter: {}", tag, line_iter);
                             var_history.insert(tag, line_iter);
                         }
                     }
@@ -114,7 +107,16 @@ fn symbol_table(vec: Vec<&str>) -> HashMap<String, u16> {
                 _ => {}
             },
         };
-        line_iter += 1;
+        // println!("{}, iter {}", line, line_iter);
+        match line.find('/').or(line.find('(')) {
+            Some(0) => {
+                continue;
+            }
+            _ => {
+                line_iter += 1;
+            }
+        }
+        // println!("Line_iter {}", line_iter);
     }
     var_history
 }
