@@ -1,0 +1,16 @@
+EJERCICIOS
+
+1. Cree un programa en hack que lea un numero de la posición de memoria 0
+Determine si ese numero es par o impar
+Si es par, coloque un 0 en la posición de memoria 1 y si es impar, coloque -1
+
+2. Cree un programa en hack que lea un numero de la posición de memoria indicada en la ram 0 y lo almacene en la posición de memoria r13, luego, vaya a la posición de memoria siguiente a la indicada en la ram0 y súmele ese valor a r13
+Por último, almacene el resultado en la posición indicada por ram(0)
+
+3. Al contenido de R1 súmele el contenido de la posición de memoria 16.
+Asuma que su resultado es una nueva posición de memoria. 
+Vaya a esa posición y al valor que haya almacenado, acumúlelo en la posición 
+de memoria 17. Súmele 1 al contenido de la posición de memoria 16 
+y repita ese proceso hasta que lo haga 10 veces. 
+Por último, al contenido de la posición de memoria 17 divídalo 
+por 10 y almacénelo en dicha posición.

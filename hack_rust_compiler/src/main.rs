@@ -43,7 +43,10 @@ fn main() {
     };
 
     let finish = Instant::now();
-    println!("{:?}", finish.duration_since(start).as_micros());
+    println!(
+        "Total time spent: {:?} microseconds",
+        finish.duration_since(start).as_micros()
+    );
 }
 
 fn symbol_table(vec: Vec<&str>) -> HashMap<String, u16> {
