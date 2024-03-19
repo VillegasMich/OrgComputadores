@@ -1,0 +1,46 @@
+  @R3
+  A=M
+  D=M
+  @R5
+  M=D
+  @R3
+  D=M
+  @i // RAM[16]
+  M=D+1
+  @R5
+  D=M-1
+  @R3
+  D=D+M // RAM[R5]-1 + RAM[3]
+  @limit // RAM[17]
+  M=D
+(LOOP)
+  @i
+  D=M
+  @limit
+  D=D-M
+  @FINISH
+  D;JGT
+  @limit
+  D=D+M
+  A=D
+  D=M
+  @R6
+  M=M+D
+  @i
+  M=M+1
+  @LOOP
+  0;JMP
+(FINISH)
+  @R5
+  D=M
+  @R6
+  D=M-D
+  @END
+  D;JLE
+  @R6
+  M=D
+  @FINISH
+  0;JMP
+(END)
+  @END
+  0;JMP
