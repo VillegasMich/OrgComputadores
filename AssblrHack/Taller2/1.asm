@@ -1,3 +1,5 @@
+// El numero de entrada se ingresa en la posicion RAM[16]
+
   @16
   D=A
   @num //RAM[16]

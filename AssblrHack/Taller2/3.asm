@@ -10,7 +10,7 @@
   @R5
   D=M-1
   @R3
-  D=D+M // RAM[R5]-1 + RAM[3]
+  D=D+M 
   @limit // RAM[17]
   M=D
 (LOOP)
