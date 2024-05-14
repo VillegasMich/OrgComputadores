@@ -5,6 +5,7 @@ import java.util.Random;
 public class KarelParalelismo implements Directions {
   public static void main(String[] args) {
     /* Variables */
+    Random rand = new Random();
     int r = 0;
     int n = 0;
     boolean e = false;
@@ -30,16 +31,26 @@ public class KarelParalelismo implements Directions {
     }
 
     /* World Setup */
+    setUpWprld(r, rand);
+
+    /* Robots */
+    Thread[] threadsArr = setUpRobots(r, n, e, rand);
+    for (Thread robot : threadsArr) {
+      robot.start();
+    }
+  }
+
+  static void setUpWprld(int r, Random rand) {
     World.setSize(8, 10); // 8 calles 10 avenidas
-    Random rand = new Random();
     for (int i = 0; i < r * 100; i++) { // i < r*100
       int randStreet = rand.nextInt(3, 9);
       int randAvenue = rand.nextInt(1, 11);
       World.placeBeepers(randStreet, randAvenue, 1);
     }
     World.setVisible(true);
+  }
 
-    /* Robots */
+  static Thread[] setUpRobots(int r, int n, boolean e, Random rand) {
     if (e) {
       while (true) {
         int tmp = rand.nextInt(1, 9);
@@ -67,9 +78,7 @@ public class KarelParalelismo implements Directions {
         }
       }
     }
-    for (Thread robot : threadsArr) {
-      robot.start();
-    }
+    return threadsArr;
   }
 }
 
@@ -84,14 +93,15 @@ class ParalelRobot extends Robot implements Runnable {
 
   public void work() {
     while (true) {
-      while (frontIsClear()) {
-        move();
-        if (nextToABeeper()) {
-          pickBeeper();
-          turnLeft();
+      while (this.frontIsClear()) {
+        this.move();
+        // System.out.println()
+        if (this.nextToABeeper()) {
+          this.pickBeeper();
+          this.turnLeft();
         }
       }
-      turnLeft();
+      this.turnLeft();
     }
     // turnOff();
   }
