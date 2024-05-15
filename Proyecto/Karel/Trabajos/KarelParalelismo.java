@@ -1,8 +1,12 @@
 import kareltherobot.*;
 import java.awt.Color;
 import java.util.Random;
+import java.util.*;
 
 public class KarelParalelismo implements Directions {
+  public static ArrayList<int[]> posUsed = new ArrayList<int[]>();
+  public static int totalBeepers;
+
   public static void main(String[] args) {
     /* Variables */
     Random rand = new Random();
@@ -41,10 +45,14 @@ public class KarelParalelismo implements Directions {
   }
 
   static void setUpWprld(int r, Random rand) {
+    KarelParalelismo.totalBeepers = r * 100;
+    World.showSpeedControl(true);
     World.setSize(8, 10); // 8 calles 10 avenidas
-    for (int i = 0; i < r * 100; i++) { // i < r*100
-      int randStreet = rand.nextInt(3, 9);
-      int randAvenue = rand.nextInt(1, 11);
+    World.placeNSWall(1, 10, 8);
+    World.placeEWWall(8, 1, 10);
+    for (int i = 0; i < KarelParalelismo.totalBeepers; i++) { // i < r*100
+      int randStreet = rand.nextInt(1, 9);
+      int randAvenue = rand.nextInt(3, 11);
       World.placeBeepers(randStreet, randAvenue, 1);
     }
     World.setVisible(true);
@@ -56,6 +64,7 @@ public class KarelParalelismo implements Directions {
         int tmp = rand.nextInt(1, 9);
         if (tmp % 2 == 0) {
           n = tmp;
+          System.out.println(n);
           break;
         }
       }
@@ -70,6 +79,7 @@ public class KarelParalelismo implements Directions {
         while (true) {
           int tmp = rand.nextInt(1, 9);
           if (tmp % 2 == 0) {
+            System.out.println(tmp);
             ParalelRobot robot = new ParalelRobot(i + 1, 2, East, 0, new Color((int) (Math.random() * 0x1000000)), tmp);
             Thread robotThread = new Thread(robot);
             threadsArr[i] = robotThread;
@@ -84,32 +94,234 @@ public class KarelParalelismo implements Directions {
 
 class ParalelRobot extends Robot implements Runnable {
   public int limitBeepers;
+  public int currBeepers;
+  public int[] initialPos = new int[2];
+  public int[] actualPos = new int[2];
 
   public ParalelRobot(int Street, int Avenue, Direction direction, int beepers, Color color, int limitBeepers) {
     super(Street, Avenue, direction, beepers, color);
     this.limitBeepers = limitBeepers;
+    this.initialPos[0] = Street;
+    this.initialPos[1] = Avenue;
+    this.actualPos[0] = Street;
+    this.actualPos[1] = Avenue;
     World.setupThread(this);
   }
 
   public void work() {
-    while (true) {
-      while (this.frontIsClear()) {
-        this.move();
-        // System.out.println()
-        if (this.nextToABeeper()) {
-          this.pickBeeper();
-          this.turnLeft();
+    while (KarelParalelismo.totalBeepers > 0) {
+      while (this.frontIsClear() && this.currBeepers < this.limitBeepers) {
+        this.c_move();
+        System.out.println(KarelParalelismo.posUsed.size());
+        if (this.checkCorner() && this.nextToABeeper()) {
+          int arr[] = { this.actualPos[1], this.actualPos[0] };
+          KarelParalelismo.posUsed.add(arr);
+          while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
+            this.pick();
+          }
+          KarelParalelismo.posUsed.remove(arr);
+          if (this.currBeepers == this.limitBeepers) {
+            this.goDeliver();
+            this.turnEast();
+          }
         }
       }
+      if (this.currBeepers == this.limitBeepers) {
+        this.goDeliver();
+        this.navegate();
+      } else {
+        this.navegate();
+      }
+    }
+    goDeliver();
+    goBack();
+  }
+
+  public void pick() {
+    this.pickBeeper();
+    this.currBeepers += 1;
+    KarelParalelismo.totalBeepers -= 1;
+  }
+
+  public void turnRandom() {
+    Random rand = new Random();
+    int num = rand.nextInt(0, 4);
+    for (int i = 0; i < num; i++) {
       this.turnLeft();
     }
-    // turnOff();
+  }
+
+  public void navegate() {
+    if (this.facingEast()) {
+      this.turnLeft();
+      if (!this.frontIsClear()) {
+        this.turnLeft();
+        this.turnLeft();
+        this.c_move();
+        if (this.checkCorner() && this.nextToABeeper()) {
+          int arr[] = { this.actualPos[1], this.actualPos[0] };
+          KarelParalelismo.posUsed.add(arr);
+          while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
+            this.pick();
+          }
+        }
+      } else {
+        this.c_move();
+        if (this.checkCorner() && this.nextToABeeper()) {
+          int arr[] = { this.actualPos[1], this.actualPos[0] };
+          KarelParalelismo.posUsed.add(arr);
+          while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
+            this.pick();
+          }
+        }
+        this.turnLeft();
+      }
+
+    } else if (this.facingNorth()) {
+      this.turnLeft();
+    } else if (this.facingWest()) {
+      this.turnRight();
+      if (!this.frontIsClear()) {
+        this.turnRight();
+      }
+      this.c_move();
+      if (this.checkCorner() && this.nextToABeeper()) {
+        int arr[] = { this.actualPos[1], this.actualPos[0] };
+        KarelParalelismo.posUsed.add(arr);
+        while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
+          this.pick();
+        }
+      }
+      this.turnRight();
+    } else if (this.facingSouth()) {
+      this.turnLeft();
+      if (!this.frontIsClear()) {
+        this.turnLeft();
+        this.turnLeft();
+      }
+    }
+  }
+
+  void turnEast() {
+    while (!this.facingEast()) {
+      this.turnLeft();
+    }
   }
 
   void turnRight() {
-    turnLeft();
-    turnLeft();
-    turnLeft();
+    this.turnLeft();
+    this.turnLeft();
+    this.turnLeft();
+  }
+
+  public void goBack() {
+    int streetDiff = this.actualPos[0] - this.initialPos[0];
+    int avenueDiff = this.actualPos[1] - this.initialPos[1];
+
+    if (avenueDiff != 0) {
+      if (this.actualPos[1] < this.initialPos[1]) {
+        while (!this.facingEast()) {
+          this.turnLeft();
+        }
+        while (this.actualPos[1] != this.initialPos[1]) {
+          this.move();
+          this.calculateDirections();
+        }
+      }
+    }
+
+    if (streetDiff != 0) {
+      if (this.actualPos[0] > this.initialPos[0]) {
+        while (!this.facingSouth()) {
+          this.turnLeft();
+        }
+        while (this.actualPos[0] != this.initialPos[0]) {
+          this.move();
+          this.calculateDirections();
+        }
+      } else {
+        while (!this.facingNorth()) {
+          this.turnLeft();
+        }
+        while (this.actualPos[0] != this.initialPos[0]) {
+          this.move();
+          this.calculateDirections();
+        }
+      }
+    }
+    System.out.println(this.actualPos[1] + " " + this.initialPos[1]);
+    this.turnOff();
+  }
+
+  public void goDeliver() {
+    int streetDiff = this.actualPos[0] - this.limitBeepers;
+    int avenueDiff = this.actualPos[1] - 1;
+
+    if (avenueDiff != 0) {
+      if (this.actualPos[1] > 1) {
+        while (!this.facingWest()) {
+          this.turnLeft();
+        }
+        while (this.actualPos[1] != 1) {
+          this.move();
+          this.calculateDirections();
+        }
+      }
+
+    }
+
+    if (streetDiff != 0) {
+      if (this.actualPos[0] > this.limitBeepers) {
+        while (!this.facingSouth()) {
+          this.turnLeft();
+        }
+        while (this.actualPos[0] != this.limitBeepers) {
+          this.move();
+          this.calculateDirections();
+        }
+      } else {
+        while (!this.facingNorth()) {
+          this.turnLeft();
+        }
+        while (this.actualPos[0] != this.limitBeepers) {
+          this.move();
+          this.calculateDirections();
+        }
+      }
+    }
+    while (this.anyBeepersInBeeperBag()) {
+      this.putBeeper();
+      this.currBeepers -= 1;
+    }
+
+  }
+
+  public void calculateDirections() {
+    if (this.facingEast()) {
+      this.actualPos[1] += 1;
+    } else if (this.facingWest()) {
+      this.actualPos[1] -= 1;
+    } else if (this.facingNorth()) {
+      this.actualPos[0] += 1;
+    } else if (this.facingSouth()) {
+      this.actualPos[0] -= 1;
+    }
+  }
+
+  public void c_move() {
+    this.calculateDirections();
+    this.move();
+  }
+
+  public boolean checkCorner() {
+    // HACER COPIA DE KarelParalelismo.posUsed
+    for (int i = 0; i < KarelParalelismo.posUsed.size(); i++) {
+      if (KarelParalelismo.posUsed.get(i)[0] == this.actualPos[1]
+          && KarelParalelismo.posUsed.get(i)[1] == this.actualPos[0]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override
