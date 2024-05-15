@@ -13,7 +13,6 @@ public class KarelParalelismo implements Directions {
     int r = 0;
     int n = 0;
     boolean e = false;
-
     /* Arguments */
     try {
       if (args.length > 0) {
@@ -33,10 +32,8 @@ public class KarelParalelismo implements Directions {
       System.err.println(exe);
       System.exit(0);
     }
-
     /* World Setup */
     setUpWprld(r, rand);
-
     /* Robots */
     Thread[] threadsArr = setUpRobots(r, n, e, rand);
     for (Thread robot : threadsArr) {
@@ -46,6 +43,7 @@ public class KarelParalelismo implements Directions {
 
   static void setUpWprld(int r, Random rand) {
     KarelParalelismo.totalBeepers = r * 100;
+    // World.setBeeperColor(Color.DARK_GRAY);
     World.showSpeedControl(true);
     World.setSize(8, 10); // 8 calles 10 avenidas
     World.placeNSWall(1, 10, 8);
@@ -64,7 +62,7 @@ public class KarelParalelismo implements Directions {
         int tmp = rand.nextInt(1, 9);
         if (tmp % 2 == 0) {
           n = tmp;
-          System.out.println(n);
+          System.out.println("Sirenas a recoger: " + n);
           break;
         }
       }
@@ -79,7 +77,7 @@ public class KarelParalelismo implements Directions {
         while (true) {
           int tmp = rand.nextInt(1, 9);
           if (tmp % 2 == 0) {
-            System.out.println(tmp);
+            System.out.println("Sirenas a recoger robot " + (i + 1) + ": " + tmp);
             ParalelRobot robot = new ParalelRobot(i + 1, 2, East, 0, new Color((int) (Math.random() * 0x1000000)), tmp);
             Thread robotThread = new Thread(robot);
             threadsArr[i] = robotThread;
@@ -108,11 +106,10 @@ class ParalelRobot extends Robot implements Runnable {
     World.setupThread(this);
   }
 
-  public void work() {
+  void work() {
     while (KarelParalelismo.totalBeepers > 0) {
       while (this.frontIsClear() && this.currBeepers < this.limitBeepers) {
         this.c_move();
-        System.out.println(KarelParalelismo.posUsed.size());
         if (this.checkCorner() && this.nextToABeeper()) {
           int arr[] = { this.actualPos[1], this.actualPos[0] };
           KarelParalelismo.posUsed.add(arr);
@@ -137,13 +134,13 @@ class ParalelRobot extends Robot implements Runnable {
     goBack();
   }
 
-  public void pick() {
+  void pick() {
     this.pickBeeper();
     this.currBeepers += 1;
     KarelParalelismo.totalBeepers -= 1;
   }
 
-  public void turnRandom() {
+  void turnRandom() {
     Random rand = new Random();
     int num = rand.nextInt(0, 4);
     for (int i = 0; i < num; i++) {
@@ -151,7 +148,7 @@ class ParalelRobot extends Robot implements Runnable {
     }
   }
 
-  public void navegate() {
+  void navegate() {
     if (this.facingEast()) {
       this.turnLeft();
       if (!this.frontIsClear()) {
@@ -164,6 +161,7 @@ class ParalelRobot extends Robot implements Runnable {
           while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
             this.pick();
           }
+          KarelParalelismo.posUsed.remove(arr);
         }
       } else {
         this.c_move();
@@ -173,6 +171,7 @@ class ParalelRobot extends Robot implements Runnable {
           while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
             this.pick();
           }
+          KarelParalelismo.posUsed.remove(arr);
         }
         this.turnLeft();
       }
@@ -191,6 +190,7 @@ class ParalelRobot extends Robot implements Runnable {
         while (this.nextToABeeper() && this.currBeepers < this.limitBeepers && this.actualPos[1] != 1) {
           this.pick();
         }
+        KarelParalelismo.posUsed.remove(arr);
       }
       this.turnRight();
     } else if (this.facingSouth()) {
@@ -214,7 +214,7 @@ class ParalelRobot extends Robot implements Runnable {
     this.turnLeft();
   }
 
-  public void goBack() {
+  void goBack() {
     int streetDiff = this.actualPos[0] - this.initialPos[0];
     int avenueDiff = this.actualPos[1] - this.initialPos[1];
 
@@ -249,11 +249,10 @@ class ParalelRobot extends Robot implements Runnable {
         }
       }
     }
-    System.out.println(this.actualPos[1] + " " + this.initialPos[1]);
     this.turnOff();
   }
 
-  public void goDeliver() {
+  void goDeliver() {
     int streetDiff = this.actualPos[0] - this.limitBeepers;
     int avenueDiff = this.actualPos[1] - 1;
 
@@ -296,7 +295,7 @@ class ParalelRobot extends Robot implements Runnable {
 
   }
 
-  public void calculateDirections() {
+  void calculateDirections() {
     if (this.facingEast()) {
       this.actualPos[1] += 1;
     } else if (this.facingWest()) {
@@ -308,13 +307,12 @@ class ParalelRobot extends Robot implements Runnable {
     }
   }
 
-  public void c_move() {
+  void c_move() {
     this.calculateDirections();
     this.move();
   }
 
-  public boolean checkCorner() {
-    // HACER COPIA DE KarelParalelismo.posUsed
+  boolean checkCorner() {
     for (int i = 0; i < KarelParalelismo.posUsed.size(); i++) {
       if (KarelParalelismo.posUsed.get(i)[0] == this.actualPos[1]
           && KarelParalelismo.posUsed.get(i)[1] == this.actualPos[0]) {
